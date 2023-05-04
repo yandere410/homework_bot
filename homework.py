@@ -28,12 +28,12 @@ logger = logging.getLogger(__name__)
 
 
 def check_tokens():
-    """проверка токенов"""
+    """проверка токенов."""
     return all([PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID])
 
 
 def send_message(bot, message):
-    """отправка сообщения в телеграм"""
+    """отправка сообщения в телеграм."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
         logger.debug('сообщение отправлено')
@@ -43,7 +43,7 @@ def send_message(bot, message):
 
 
 def get_api_answer(timestamp):
-    """запрос к api"""
+    """запрос к api."""
     params = {'from_date': timestamp}
     try:
         response = requests.get(ENDPOINT, params=params, headers=HEADERS)
@@ -58,11 +58,11 @@ def get_api_answer(timestamp):
 
 
 def check_response(response):
-    """проверка ответа api"""
+    """проверка ответа api."""
     if not isinstance(response, dict):
         raise TypeError('неверный формат api')
     if 'homeworks' not in response:
-        raise ValueError(f'отуствуют ожидаемые ключи в ответе api')
+        raise ValueError('отуствуют ожидаемые ключи в ответе api')
     homeworks = response.get('homeworks')
     if not isinstance(homeworks, list):
         raise TypeError(f'неверный формат api, {homeworks}')
@@ -72,7 +72,7 @@ def check_response(response):
 
 
 def parse_status(homework):
-    """текущий статус работы"""
+    """текущий статус работы."""
     if 'status' not in homework or 'homework_name' not in homework:
         raise ValueError(f'ответ api не содержит ключа {homework}')
     homework_name = homework.get('homework_name')
