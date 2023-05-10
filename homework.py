@@ -34,6 +34,7 @@ def check_tokens():
 
 
 def send_error_message(bot, error_message):
+    """отправка сообщения об ошибке в тг"""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, f'{error_message}')
     except TelegramError as telegram_error:
@@ -58,11 +59,14 @@ def get_api_answer(timestamp):
     try:
         response = requests.get(ENDPOINT, params=params, headers=HEADERS)
         response.raise_for_status()
-        data = response.json()
         if response.status_code != HTTPStatus.OK:
             raise ConnectionError(
                 f'Статус ответа сервере не {HTTPStatus.OK}',
             )
+        try:
+            data = response.json()
+        except ValueError as error:
+            raise ConnectionError('Ошибка при обработке ответа API') from error
         return data
     except requests.exceptions.RequestException as error:
         raise ConnectionError from error
@@ -94,6 +98,28 @@ def parse_status(homework):
     return f'Изменился статус проверки работы "{homework_name}". {verdict}'
 
 
+def handle_homework(bot, homework):
+    """вспомогательная функция статуса работы"""
+    try:
+        message = parse_status(homework)
+        if message:
+            return message
+    except Exception as parse_error:
+        logger.error(f'ошибка парсинга {parse_error}')
+    return None
+
+
+def handle_response(bot, response):
+    """вспомогательная функция обработки запросов"""
+    try:
+        homeworks = check_response(response)
+        if homeworks:
+            return handle_homework(bot, homeworks[0])
+    except ValueError as api_error:
+        logger.error(f'ощибка в запросе API {api_error}')
+    return None
+
+
 def main():
     """Основная логика работы бота."""
     bot = telegram.Bot(token=TELEGRAM_TOKEN)
@@ -107,26 +133,15 @@ def main():
     while True:
         try:
             response = get_api_answer(timestamp)
-            try:
-                homeworks = check_response(response)
-                if homeworks:
-                    try:
-                        message = parse_status(homeworks[0])
-                        if message:
-                            send_message(bot, message)
-                            logger.info(f'Новое сообщение: {message}')
-                    except Exception as parse_error:
-                        logger.error(f'Ошибка при парсинге статуса работы:'
-                                     f' {parse_error}', exc_info=True)
-                        send_error_message(bot, parse_error)
-            except ValueError as api_error:
-                logger.error(f'Ошибка при запросе api: {api_error}')
-                send_error_message(bot, api_error)
+            message = handle_response(bot, response)
+            if message:
+                send_message(bot, message)
+                logger.info(f'Новое сообщение: {message}')
             if 'current_date' not in response:
                 logger.error('отсутсвует ключ "current_date"')
                 send_error_message(bot,
                                    error_message='нет ключа "current_date"')
-            timestamp = response.get('current_date')
+                timestamp = response.get('current_date')
         except Exception as error:
             logger.error(f'Сбой в работе программы: {error}', exc_info=True)
             send_error_message(bot, error)
