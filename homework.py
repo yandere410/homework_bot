@@ -34,7 +34,7 @@ def check_tokens():
 
 
 def send_error_message(bot, error_message):
-    """отправка сообщения об ошибке в тг"""
+    """отправка сообщения об ошибке в тг."""
     try:
         bot.send_message(TELEGRAM_CHAT_ID, f'{error_message}')
     except TelegramError as telegram_error:
@@ -99,7 +99,7 @@ def parse_status(homework):
 
 
 def handle_homework(bot, homework):
-    """вспомогательная функция статуса работы"""
+    """вспомогательная функция статуса работы."""
     try:
         message = parse_status(homework)
         if message:
@@ -110,7 +110,7 @@ def handle_homework(bot, homework):
 
 
 def handle_response(bot, response):
-    """вспомогательная функция обработки запросов"""
+    """вспомогательная функция обработки запросов."""
     try:
         homeworks = check_response(response)
         if homeworks:
