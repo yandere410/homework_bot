@@ -36,10 +36,10 @@ def check_tokens():
 def send_message(bot, message):
     """отправка сообщения в телеграм."""
     try:
-        bot.send_message(TELEGRAM_CHAT_ID, message='ЗДАРОВА!!!')
+        bot.send_message(TELEGRAM_CHAT_ID, message)
     except telegram.TelegramError as error:
-        send_message(bot, message=str(error))
         logger.error(f'ошибка отправки сообщения {error}')
+        send_message(bot, message=str(error))
     else:
         logger.debug('сообщение отправлено')
 
@@ -101,22 +101,11 @@ def main():
             response = get_api_answer(timestamp)
             homeworks = check_response(response)
             if homeworks:
-                try:
-                    message = parse_status(homeworks[0])
-                    if message:
-                        send_message(bot, message)
-                        logger.info(f'Новое сообщение: {message}')
-                except Exception as error:
-                    logger.error(f'Ошибка при парсинге: {error}')
-                    send_message(
-                        bot,
-                        message=f'Ошибка при парсинге: {error}')
+                message = parse_status(homeworks[0])
+                if message:
+                    send_message(bot, message)
+                    logger.info(f'Новое сообщение: {message}')
             timestamp = response.get('current_date')
-        except (ValueError, KeyError) as error:
-            logger.error(f'Ошибка в запросе API: {error}')
-            send_message(
-                bot,
-                message=f'Ошибка в запросе API: {error}')
         except Exception as error:
             logger.error(f'Сбой в работе программы: {error}', exc_info=True)
             send_message(
