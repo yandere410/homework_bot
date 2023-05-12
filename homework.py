@@ -2,8 +2,8 @@ import logging
 import sys
 import os
 import time
-from http import HTTPStatus
 import json
+from http import HTTPStatus
 
 import requests
 import telegram
