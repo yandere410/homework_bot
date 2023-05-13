@@ -39,7 +39,6 @@ def send_message(bot, message):
         bot.send_message(TELEGRAM_CHAT_ID, message)
     except telegram.TelegramError as error:
         logger.error(f'ошибка отправки сообщения {error}')
-        send_message(bot, message=str(error))
     else:
         logger.debug('сообщение отправлено')
 
@@ -53,12 +52,11 @@ def get_api_answer(timestamp):
             raise ConnectionError(
                 f'Статус ответа сервере не {HTTPStatus.OK}',
             )
-        data = response.json()
+        return response.json()
     except json.decoder.JSONDecodeError as error:
-        raise Exception('Ошибка при обработке ответа API') from error
+        raise json.JSONDecodeError(f'Ошибка при разборе json {error.msg}', error.doc, error.pos) from error
     except requests.exceptions.RequestException as error:
         raise ConnectionError(f'ошибка запроса к API {error}') from error
-    return data
 
 
 def check_response(response):
@@ -71,14 +69,14 @@ def check_response(response):
     if not isinstance(homeworks, list):
         raise TypeError(f'неверный формат API, {homeworks}')
     if 'current_date' not in response:
-        return None
+        return homeworks
     return homeworks
 
 
 def parse_status(homework):
     """текущий статус работы."""
     if 'homework_name' not in homework:
-        raise ValueError(f'ответ api не содержит ключа {homework}')
+        raise KeyError(f'ответ api не содержит ключа {homework}')
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
     if homework_status not in HOMEWORK_VERDICTS:
@@ -94,7 +92,7 @@ def main():
         logger.critical(
             'Отсуствует токен, программа приостановлена',
             exc_info=True)
-        raise SystemExit
+        raise SystemExit('критическая ошибка программа завершена')
     timestamp = int(time.time())
     while True:
         try:
@@ -104,7 +102,6 @@ def main():
                 message = parse_status(homeworks[0])
                 if message:
                     send_message(bot, message)
-                    logger.info(f'Новое сообщение: {message}')
             timestamp = response.get('current_date')
         except Exception as error:
             logger.error(f'Сбой в работе программы: {error}', exc_info=True)
