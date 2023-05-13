@@ -54,7 +54,9 @@ def get_api_answer(timestamp):
             )
         return response.json()
     except json.decoder.JSONDecodeError as error:
-        raise json.JSONDecodeError(f'Ошибка при разборе json {error.msg}', error.doc, error.pos) from error
+        raise json.JSONDecodeError(
+            f'Ошибка при разборе json {error.msg}',
+            error.doc, error.pos) from error
     except requests.exceptions.RequestException as error:
         raise ConnectionError(f'ошибка запроса к API {error}') from error
 
