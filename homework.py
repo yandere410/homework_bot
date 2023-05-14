@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 def check_tokens():
-    """проверка токенов."""
+    """Проверка токенов."""
     return all([PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID])
 
 
@@ -38,13 +38,13 @@ def send_message(bot, message):
     try:
         bot.send_message(TELEGRAM_CHAT_ID, message)
     except telegram.TelegramError as error:
-        logger.error(f'ошибка отправки сообщения {error}')
+        logger.error(f'Ошибка отправки сообщения {error}')
     else:
-        logger.debug('сообщение отправлено')
+        logger.debug('Сообщение отправлено')
 
 
 def get_api_answer(timestamp):
-    """запрос к api."""
+    """Запрос к api."""
     params = {'from_date': timestamp}
     try:
         response = requests.get(ENDPOINT, params=params, headers=HEADERS)
@@ -58,27 +58,29 @@ def get_api_answer(timestamp):
             f'Ошибка при разборе json {error.msg}',
             error.doc, error.pos) from error
     except requests.exceptions.RequestException as error:
-        raise ConnectionError(f'ошибка запроса к API {error}') from error
+        raise ConnectionError(f'Ошибка запроса к API {error}') from error
 
 
 def check_response(response):
-    """проверка ответа api."""
+    """Проверка ответа api."""
     if not isinstance(response, dict):
-        raise TypeError('неверный формат API')
+        raise TypeError('Неверный формат API')
     if 'homeworks' not in response:
-        raise KeyError('отуствуют ожидаемые ключи в ответе api')
+        raise KeyError('Отуствуют ожидаемые ключи в ответе API')
     homeworks = response.get('homeworks')
     if not isinstance(homeworks, list):
-        raise TypeError(f'неверный формат API, {homeworks}')
+        raise TypeError(f'Неверный формат API, {homeworks}')
     if 'current_date' not in response:
-        return homeworks
+        raise KeyError('Отсуствует ключ "current_date"')
     return homeworks
 
 
 def parse_status(homework):
-    """текущий статус работы."""
+    """Текущий статус работы."""
     if 'homework_name' not in homework:
-        raise KeyError(f'ответ api не содержит ключа {homework}')
+        raise KeyError(f'Ответ API не содержит ключа {homework}')
+    if 'status' not in homework:
+        raise ValueError('Отсутствует статус работы в ответе API')
     homework_name = homework.get('homework_name')
     homework_status = homework.get('status')
     if homework_status not in HOMEWORK_VERDICTS:
@@ -94,16 +96,22 @@ def main():
         logger.critical(
             'Отсуствует токен, программа приостановлена',
             exc_info=True)
-        raise SystemExit('критическая ошибка программа завершена')
+        raise SystemExit('Критическая ошибка программа завершена')
     timestamp = int(time.time())
     while True:
         try:
             response = get_api_answer(timestamp)
-            homeworks = check_response(response)
+            try:
+                homeworks = check_response(response)
+            except KeyError as error:
+                if 'current_date' in str(error):
+                    logger.error('Отсутствует ключ "current_date" в ответе API')
+                    continue
+                else:
+                    raise
             if homeworks:
                 message = parse_status(homeworks[0])
-                if message:
-                    send_message(bot, message)
+                send_message(bot, message)
             timestamp = response.get('current_date')
         except Exception as error:
             logger.error(f'Сбой в работе программы: {error}', exc_info=True)
