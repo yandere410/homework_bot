@@ -105,7 +105,8 @@ def main():
                 homeworks = check_response(response)
             except KeyError as error:
                 if 'current_date' in str(error):
-                    logger.error('Отсутствует ключ "current_date" в ответе API')
+                    logger.error(
+                        'Отсутствует ключ "current_date" в ответе API')
                     continue
                 else:
                     raise
