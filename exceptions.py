@@ -1,6 +1,2 @@
-class CurrentDateError(KeyError):
-    pass
-
-
-class TypeCurrentDateError(TypeError):
+class CurrentDateError(Exception):
     pass

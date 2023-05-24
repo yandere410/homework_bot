@@ -9,8 +9,7 @@ import requests
 import telegram
 from dotenv import load_dotenv
 
-from exceptions import CurrentDateError, TypeCurrentDateError
-
+from exceptions import CurrentDateError
 load_dotenv()
 
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
@@ -76,7 +75,7 @@ def check_response(response):
         raise CurrentDateError('Отсуствует ключ "current_date"')
     current_date = response.get('current_date')
     if not isinstance(current_date, int):
-        raise TypeCurrentDateError(
+        raise CurrentDateError(
             f'Неверный тип данных для ключа "current_date'
             f' ожидается int, получен {type(current_date)}')
     return homeworks
@@ -115,11 +114,7 @@ def main():
             timestamp = response.get('current_date')
         except CurrentDateError as error:
             logger.error(
-                f'Отсутствует ключ "current_date" в ответе API {error}')
-        except TypeCurrentDateError as e:
-            logger.error(
-                f'Неверный тип данных для ключа "current_date'
-                f' ожидается int, получен {e}')
+                f'Ошибка {error}')
         except Exception as error:
             logger.error(f'Сбой в работе программы: {error}', exc_info=True)
             send_message(
